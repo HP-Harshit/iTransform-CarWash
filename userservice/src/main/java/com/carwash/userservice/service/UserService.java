@@ -6,7 +6,9 @@ import com.carwash.userservice.dto.SignupRequest;
 import com.carwash.userservice.dto.LoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -24,7 +26,7 @@ public class UserService {
         // Check if the user already exists
         Optional<User> existingUser = userRepository.findByEmail(signupRequest.getEmail());
         if (existingUser.isPresent()) {
-            throw new RuntimeException("User with email already exists!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with email already exists!");
         }
 
         // Create a new user and encode the password
@@ -42,7 +44,7 @@ public class UserService {
     public User authenticateUser(LoginRequest loginRequest) {
         Optional<User> user = userRepository.findByEmail(loginRequest.getEmail());
         if (user.isEmpty() || !passwordEncoder.matches(loginRequest.getPassword(), user.get().getPassword())) {
-            throw new RuntimeException("Invalid email or password!");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password!");
         }
         return user.get();
     }
@@ -50,6 +52,6 @@ public class UserService {
     // Method to fetch user profile by ID
     public User getUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + id));
     }
 }
