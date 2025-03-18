@@ -1,12 +1,18 @@
 package com.carwash.washerservice.service;
 
 import com.carwash.washerservice.dto.WasherDTO;
+import com.carwash.washerservice.dto.WasherLoginRequest;
+import com.carwash.washerservice.dto.WasherSignupRequest;
 import com.carwash.washerservice.entity.Washer;
 import com.carwash.washerservice.repository.WasherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,61 +21,36 @@ public class WasherService {
     @Autowired
     private WasherRepository washerRepository;
 
-    public List<WasherDTO> getAllWashers() {
-        return washerRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public Washer registerWasher(WasherSignupRequest washerSignupRequest) {
+        Optional<Washer> existingWasher = washerRepository.findByEmail(washerSignupRequest.getEmail());
+        if(existingWasher.isPresent()){
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User with email already exists!");
+        }
+
+            Washer washer = new Washer();
+            washer.setFirstName(washerSignupRequest.getFirstName());
+            washer.setLastName(washerSignupRequest.getLastName());
+            washer.setEmail(washerSignupRequest.getEmail());
+            washer.setPassword(passwordEncoder.encode(washerSignupRequest.getPassword()));
+            washer.setRole("CUSTOMER"); // Default role
+
+            return washerRepository.save(washer);
     }
 
-    public WasherDTO getWasherById(Long id) {
-        Washer washer = washerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Washer not found with ID: " + id));
-        return convertToDTO(washer);
+    public Washer authenticateWasher(WasherLoginRequest washerLoginRequest) {
+        Optional<Washer> user = washerRepository.findByEmail(washerLoginRequest.getEmail());
+        if (user.isEmpty() || !passwordEncoder.matches(washerLoginRequest.getPassword(), user.get().getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password!");
+        }
+        return user.get();
     }
 
-    public WasherDTO addWasher(WasherDTO washerDTO) {
-        Washer washer = convertToEntity(washerDTO);
-        Washer savedWasher = washerRepository.save(washer);
-        return convertToDTO(savedWasher);
-    }
-
-    public WasherDTO updateWasher(Long id, WasherDTO washerDTO) {
-        Washer existingWasher = washerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Washer not found with ID: " + id));
-
-        // Update the entity with DTO values
-        existingWasher.setName(washerDTO.getName());
-        existingWasher.setEmail(washerDTO.getEmail());
-        existingWasher.setPhone(washerDTO.getPhone());
-        existingWasher.setAvailable(washerDTO.isAvailable());
-
-        Washer updatedWasher = washerRepository.save(existingWasher);
-        return convertToDTO(updatedWasher);
-    }
-
-    public void deleteWasher(Long id) {
-        washerRepository.deleteById(id);
-    }
-
-    // Convert entity to DTO
-    private WasherDTO convertToDTO(Washer washer) {
-        return new WasherDTO(
-                washer.getId(),
-                washer.getName(),
-                washer.getEmail(),
-                washer.getPhone(),
-                washer.isAvailable()
-        );
-    }
-
-    // Convert DTO to entity
-    private Washer convertToEntity(WasherDTO washerDTO) {
-        Washer washer = new Washer();
-        washer.setId(washerDTO.getId());
-        washer.setName(washerDTO.getName());
-        washer.setEmail(washerDTO.getEmail());
-        washer.setPhone(washerDTO.getPhone());
-        washer.setAvailable(washerDTO.isAvailable());
-        return washer;
+    // Method to fetch user profile by ID
+    public Washer getUserById(Long id) {
+        return washerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with ID: " + id));
     }
 }

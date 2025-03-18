@@ -1,8 +1,13 @@
 package com.carwash.washerservice.controller;
 
-import com.carwash.washerservice.dto.WasherDTO;
+import com.carwash.washerservice.dto.WasherLoginRequest;
+import com.carwash.washerservice.dto.WasherLoginResponse;
+import com.carwash.washerservice.dto.WasherSignupRequest;
+import com.carwash.washerservice.entity.Washer;
 import com.carwash.washerservice.service.WasherService;
+import com.carwash.washerservice.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,29 +20,22 @@ public class WasherController {
     @Autowired
     private WasherService washerService;
 
-    @GetMapping
-    public List<WasherDTO> getAllWashers() {
-        return washerService.getAllWashers();
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @PostMapping("/signup")
+    public ResponseEntity<Washer> registerWasher(@RequestBody WasherSignupRequest washerSignupRequest){
+        Washer registeredWasher = washerService.registerWasher(washerSignupRequest);
+        return new ResponseEntity<>(registeredWasher, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public WasherDTO getWasherById(@PathVariable Long id) {
-        return washerService.getWasherById(id);
-    }
+    @PostMapping("/login")
+    public ResponseEntity<WasherLoginResponse> loginUser(@RequestBody WasherLoginRequest washerLoginRequest) {
+        Washer authenticatedWasher = washerService.authenticateWasher(washerLoginRequest);
+        String token = jwtUtil.generateToken(authenticatedWasher.getEmail(), authenticatedWasher.getRole()); // Generate JWT token
 
-    @PostMapping
-    public WasherDTO addWasher(@RequestBody WasherDTO washerDTO) {
-        return washerService.addWasher(washerDTO);
-    }
+        WasherLoginResponse response = new WasherLoginResponse(token, authenticatedWasher);
 
-    @PutMapping("/{id}")
-    public WasherDTO updateWasher(@PathVariable Long id, @RequestBody WasherDTO washerDTO) {
-        return washerService.updateWasher(id, washerDTO);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteWasher(@PathVariable Long id) {
-        washerService.deleteWasher(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(response);
     }
 }

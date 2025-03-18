@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 //@NoArgsConstructor
 public class WasherDTO {
     private Long id;         // Washer ID
-    private String name;     // Washer Name
+    private String firstName;
+    private String lastName;     // Washer Name
     private String email;    // Washer Email
     private String phone;    // Washer Phone
     private boolean available; // Washer Availability
@@ -17,12 +18,29 @@ public class WasherDTO {
     public WasherDTO() {
     }
 
-    public WasherDTO(Long id, String name, String email, String phone, boolean available) {
+    public WasherDTO(Long id, String firstName, String lastName, String email, String phone, boolean available) {
         this.id = id;
-        this.name = name;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.email = email;
         this.phone = phone;
         this.available = available;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public Long getId() {
@@ -33,13 +51,6 @@ public class WasherDTO {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getEmail() {
         return email;
