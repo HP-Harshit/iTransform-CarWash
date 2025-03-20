@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive # Ensure the application runs in reactive mode
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE # Load balancer URI for Eureka
+          predicates:
+            - Path=/api/users/**
+        - id: washer-service
+          uri: lb://WASHER-SERVICE
+          predicates:
+            - Path=/api/washers/**
+        - id: admin-service
+          uri: lb://ADMIN-SERVICE
+          predicates:
+            - Path=/api/admin/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/ # URL of Eureka server
+    fetch-registry: true
+    register-with-eureka: true
+
+server:
+  port: 8080 # Port for API Gateway
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.netflix.eureka: DEBUG
+    com.netflix.discovery: DEBUG
